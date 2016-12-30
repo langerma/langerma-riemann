@@ -22,11 +22,7 @@
                           :checktype checktype
                           :servicetype servicetype
                           :time (:time event)
-                          :ttl 30}
-                       )
-                     )
-                   )
-  )
+                          :ttl 30}))))
   (def graph
     (opentsdb {:host host})
   )
