@@ -24,12 +24,10 @@
                           :time (:time event)
                           :ttl 30}))))
   (def graph
-    (opentsdb {:host host})
-  )
-)
+    (opentsdb {:host host})))
 
 ; Expire old events from the index every 5 seconds.
-(periodically-expire 5 {:keep-keys [:host :service :tags, :state, :description, :metric]})
+(periodically-expire 10 {:keep-keys [:host :service :tags, :state, :description, :metric]})
 (let [index (index)]
   ; Inbound events will be passed to these streams:
   (streams
@@ -39,8 +37,7 @@
                  graph)
 ;      #(info "host:" (:host %) (:service %) "STATUS:" (:state %) "METRIC:" (:metric %)))))
 ;      ; Log expired events.
-      (expired
-        (fn [event] (info "expired" event))))))
+        (fn [event] (info "expired" event)))))
 
 ;(periodically-expire 10 {:keep-keys [:host :service :tags, :state, :description, :metric]})
 ;(let [index (index)]
