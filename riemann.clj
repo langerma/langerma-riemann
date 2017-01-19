@@ -36,7 +36,7 @@
                :claim-timeout 0.1
                :reconnect-interval 4 })))
 
-(periodically-expire 30 {:keep-keys [:host :service :tags, :state, :description, :metric]})
+;(periodically-expire 30 {:keep-keys [:host :service :tags, :state, :description, :metric]})
 (let [index (index)]
   (streams
     (default :ttl 30
@@ -45,7 +45,7 @@
       ;       graph)
       (where (tagged-any "collectd")
              graph)
-      (where-rewrite (host nil)
+      (where (host nil)
              graph)
       logstash-forward
       ;#(info %)
