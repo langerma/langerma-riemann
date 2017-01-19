@@ -9,6 +9,7 @@
   (tcp-server {:host host})
   (udp-server {:host host})
   (ws-server  {:host host})
+  ;(graphite-server {:host host})
   (graphite-server :host host
                    :parser-fn
                    (fn [{:keys [service] :as event}]
@@ -20,28 +21,25 @@
                           :metric (:metric event)
                           :tags source
                           :checktype checktype
+                          :state "ok"
                           :servicetype servicetype
                           :time (:time event)
                           :ttl 30}))))
   (def graph
     (opentsdb {:host host})))
 
-; Expire old events from the index every 5 seconds.
-(periodically-expire 10 {:keep-keys [:host :service :tags, :state, :description, :metric]})
+(periodically-expire 30 {:keep-keys [:host :service :tags, :state, :description, :metric]})
 (let [index (index)]
-  ; Inbound events will be passed to these streams:
   (streams
-    (default :ttl 10
+    (default :ttl 30
       index
-      (where (tags "icinga2")
-                 graph)
-;      #(info "host:" (:host %) (:service %) "STATUS:" (:state %) "METRIC:" (:metric %)))))
-;      ; Log expired events.
-        (fn [event] (info "expired" event)))))
-
-;(periodically-expire 10 {:keep-keys [:host :service :tags, :state, :description, :metric]})
-;(let [index (index)]
-;  (streams
-;    (default :ttl 60
-;    index
-;    #(info %))))
+      ;(where (tags "icinga2")
+      ;       graph)
+      (where (tagged-any "collectd")
+             graph)
+      (expired
+        (fn [event] (info "EXPIRED" event))))))
+      ;#(info %))))
+      ;(changed-state {:init "ok"}
+      ;  (stable 5 :state
+      ;    (fn [event] (info "CHANGE IN STATE DETECTED" event)))))))

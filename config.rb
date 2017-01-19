@@ -23,5 +23,5 @@ set  :bind, "0.0.0.0"
 
 # Save workspace configuration to Amazon S3 (you'll need to have the "fog"
 # gem installed)
-# config.store[:ws_config] = 's3://my-bucket/config.json'
+config.store[:ws_config] = '/tmp/config.json'
 # config.store[:s3_config] = {:aws_access_key_id => "123ABC", :aws_secret_access_key => "789XYZ"}
