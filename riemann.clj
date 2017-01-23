@@ -69,7 +69,7 @@
   #(info e))
 
 ; reap expired events every 10 seconds
-(periodically-expire 10 {:keep-keys [:host :service :environment :resource :grid :cluster :ip :tags :metric :index-time]})
+(periodically-expire 60 {:keep-keys [:host :service :environment :resource :grid :cluster :ip :tags :metric :index-time]})
 
 ; set of severity functions
 (defn severity
@@ -98,7 +98,7 @@
         (merge event :metric nil)))))
 
 ; thresholding
-(let [index (default :ttl 900 (index))
+(let [index (default :ttl 60 (index))
       alert (logstash {:host "127.0.0.1"
                        :port 25827
                        :protocol :tcp})
@@ -135,14 +135,13 @@
                       cpu-load-five
                       cpu-load-fivteen))))
   (streams
-    (with {:metric 1 :host hostname :state "normal" :service "riemann events_sec"}
+    ;(with {:metric 1 :host hostname :state "normal" :service "riemann events_sec"}
       ;#(info %)
-      (rate 10 index graph))))
-
+      (rate 10 index graph)))
 ; use #(info %) for log
 ;(let [index (index)]
-;  (streams
-;    index
+  ;(streams
+    ;index
 ;    (where (tags "icinga2")
 ;           (smap (fn [event]
 ;                   (assoc event :state "ok")
