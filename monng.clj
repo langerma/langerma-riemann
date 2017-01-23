@@ -127,11 +127,6 @@
                                  reinject)))))
            per-host-summaries
            (by [:host]
-               (project [(service #"^icinga.riemann.UNIX.load")]
-                        (smap folds/sum
-                               (with {:service "icinga.riemann.UNIX.load.avg"
-                                      :ttl default-ttl}
-                                 index)))
                (project [(service "icinga.riemann.UNIX.memory.USED")
                          (service "icinga.riemann.UNIX.memory.FBSD_MEM")]
                         (smap folds/quotient
