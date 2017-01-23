@@ -30,13 +30,15 @@
    "memory/percent-used" {:warning 80
                           :critical 98}
 
-   "icinga.riemann.UNIX.memory.FBSD_MEM" {}
-   "icinga.riemann.UNIX.memory.CACHE" {}
-   "icinga.riemann.UNIX.memory.BUF" {}
-   "icinga.riemann.UNIX.memory.WIRED" {}
-   "icinga.riemann.UNIX.memory.INACTIVE" {}
    "icinga.riemann.UNIX.memory.ACTIVE" {}
-
+   "icinga.riemann.UNIX.memory.BUF" {}
+   "icinga.riemann.UNIX.memory.CACHE" {}
+   "icinga.riemann.UNIX.memory.FBSD_MEM" {}
+   "icinga.riemann.UNIX.memory.INACTIVE" {}
+   "icinga.riemann.UNIX.memory.USED" {}
+   "icinga.riemann.UNIX.memory.WIRED" {}
+   "icinga.riemann.UNIX.memory.quotient" {:warning 80
+                                          :critical 95}
    "swap/swap-cached" {}
    "swap/swap-free" {}
    "swap/swap-used" {}

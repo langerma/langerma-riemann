@@ -125,37 +125,51 @@
                                                    :ttl default-ttl
                                                    :state nil}
                                  reinject)))))
-
            per-host-summaries
            (by [:host]
-               (project [(service "cpu-average/cpu-system")
-                         (service "cpu-average/cpu-user")]
+               (project [(service #"^icinga.riemann.UNIX.load")]
                         (smap folds/sum
-                              (with {:service "cpu-average/cpu-used"
-                                     :ttl default-ttl}
-                                    index)))
-
-               (project [(service "memory/memory-used")
-                         (service "memory/memory-free")
-                         (service "memory/memory-cached")
-                         (service "memory/memory-buffered")]
-                        (smap folds/sum
-                              (with {:service "memory/memory-total"
+                               (with {:service "icinga.riemann.UNIX.load.avg"
+                                      :ttl default-ttl}
+                                 index)))
+               (project [(service "icinga.riemann.UNIX.memory.USED")
+                         (service "icinga.riemann.UNIX.memory.FBSD_MEM")]
+                        (smap folds/quotient
+                              (with {:service "icinga.riemann.UNIX.memory.quotient"
                                      :ttl default-ttl
                                      :tags ["summary"]}
-                                    reinject)))
+                                (float-to-percent index)))))
 
-               (project [(service "memory/memory-used")
-                         (service "memory/memory-total")]
-                        (smap folds/quotient
-                              (with {:service "memory/percent-used"
-                                     :ttl default-ttl}
-                                    (float-to-percent index)))))
+           ;per-host-summaries
+           ;(by [:host]
+           ;    (project [(service "cpu-average/cpu-system")
+           ;              (service "cpu-average/cpu-user")]
+           ;             (smap folds/sum
+           ;                   (with {:service "cpu-average/cpu-used"
+           ;                          :ttl default-ttl}
+           ;                         index)))
+
+           ;    (project [(service "memory/memory-used")
+           ;              (service "memory/memory-free")
+           ;              (service "memory/memory-cached")
+           ;              (service "memory/memory-buffered")]
+           ;             (smap folds/sum
+           ;                   (with {:service "memory/memory-total"
+           ;                          :ttl default-ttl
+           ;                          :tags ["summary"]}
+           ;                         reinject)))
+
+           ;    (project [(service "memory/memory-used")
+           ;              (service "memory/memory-total")]
+           ;             (smap folds/quotient
+           ;                   (with {:service "memory/percent-used"
+           ;                          :ttl default-ttl}
+           ;                         (float-to-percent index)))))
 
            clock-skew
            (where (not (nil? host))
                   (clock-skew
-                   (with-but-collectd {:service "clock skew"
+                   (with-but-icinga {:service "clock skew"
                                        :tags ["internal"]}
                      (rate 5 index))))]
 
