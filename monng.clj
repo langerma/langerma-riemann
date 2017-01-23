@@ -78,7 +78,10 @@
 (periodically-expire 1)
 
 (let [index (smap (threshold-check thresholds)
-                  (tap :index (index)))]
+                  (tap :index (index)))
+      alert (logstash {:host "127.0.0.1"
+                       :port 25827
+                       :protocol :tcp})]
   (streams
    (default :ttl default-ttl
      (let [memory-and-load-summary
@@ -92,7 +95,6 @@
                                                :ttl default-ttl
                                                :state "ok"}
                                index)))))
-
            total-network-traffic
            (where (service #"^interface-.*/if_octets/[tr]x$")
                   index
@@ -103,19 +105,6 @@
                                              :ttl default-ttl
                                              :state "ok"}
                            index))))
-
-           riak-cluster-stats
-           (where (and (service #"^curl_json-riak/gauge-")
-                       (tagged "collectd"))
-                  index
-                  (by [:service]
-                      (coalesce
-                       (smap folds/sum
-                             (with-but-collectd {:tags ["summary"]
-                                                 :state "ok"}
-                               (adjust [:service str "/cluster"]
-                                       index))))))
-
            distinct-hosts
            (where (not (tagged "summary"))
                   (with :service "distinct hosts"
@@ -134,7 +123,6 @@
                                      :ttl default-ttl
                                      :tags ["summary"]}
                                 (float-to-percent index)))))
-
            ;per-host-summaries
            ;(by [:host]
            ;    (project [(service "cpu-average/cpu-system")
@@ -143,7 +131,6 @@
            ;                   (with {:service "cpu-average/cpu-used"
            ;                          :ttl default-ttl}
            ;                         index)))
-
            ;    (project [(service "memory/memory-used")
            ;              (service "memory/memory-free")
            ;              (service "memory/memory-cached")
@@ -153,27 +140,25 @@
            ;                          :ttl default-ttl
            ;                          :tags ["summary"]}
            ;                         reinject)))
-
            ;    (project [(service "memory/memory-used")
            ;              (service "memory/memory-total")]
            ;             (smap folds/quotient
            ;                   (with {:service "memory/percent-used"
            ;                          :ttl default-ttl}
            ;                         (float-to-percent index)))))
-
            clock-skew
            (where (not (nil? host))
                   (clock-skew
                    (with-but-icinga {:service "clock skew"
                                        :tags ["internal"]}
                      (rate 5 index))))]
-
        (where (not (state "expired"))
               memory-and-load-summary
               total-network-traffic
               distinct-hosts
               per-host-summaries
-              riak-cluster-stats
               clock-skew
+              alert
+              graph
               index))
      (expired #(info "Expired" %)))))
