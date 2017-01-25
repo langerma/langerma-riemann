@@ -10,9 +10,9 @@
    "load/load/midterm" {:warning 3 :critical 4}
    "load/load/longterm" {:warning 3 :critical 4}
 
-   "icinga.riemann.UNIX.load.load1" {:warning 2 :critical 4}
-   "icinga.riemann.UNIX.load.load5" {:warning 3 :critical 5}
-   "icinga.riemann.UNIX.load.load15" {:warning 4 :critical 6}
+   "icinga.riemann.UNIX.load.load1" {:warning 4 :critical 5}
+   "icinga.riemann.UNIX.load.load5" {:warning 3 :critical 4}
+   "icinga.riemann.UNIX.load.load15" {:warning 2 :critical 3}
 
    "processes/ps_state-blocked" {:warning 4 :critical 8}
    "processes/ps_state-paging" {:warning 4 :critical 8}
@@ -37,8 +37,8 @@
    "icinga.riemann.UNIX.memory.INACTIVE" {}
    "icinga.riemann.UNIX.memory.USED" {}
    "icinga.riemann.UNIX.memory.WIRED" {}
-   "icinga.riemann.UNIX.memory.quotient" {:warning 80
-                                          :critical 95}
+   "icinga.riemann.UNIX.memory.quotient" {:warning 95
+                                          :critical 98}
    "swap/swap-cached" {}
    "swap/swap-free" {}
    "swap/swap-used" {}

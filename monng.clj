@@ -158,7 +158,8 @@
               distinct-hosts
               per-host-summaries
               clock-skew
-              alert
+              ;alert
               graph
+              (opsgenie "fe5aee2e-a1b4-4114-b957-53e2c672dfac" "langer.markus@gmail.com")
               index))
      (expired #(info "Expired" %)))))
