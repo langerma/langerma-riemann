@@ -49,4 +49,4 @@
       (if (not (zero? min-metric))
         (let [percent (/ max-metric min-metric)]
           (call-rescue last-event children))
-        (let [percent 0])
+        (let [percent 0])))))

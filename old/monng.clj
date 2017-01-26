@@ -5,6 +5,11 @@
 
 (require '[clojure.string :as string])
 
+(defn inject-event [& children]
+  (fn [e]
+    (core/stream! @core e)
+    (call-rescue e children)))
+
 (defn find-specific-threshold
   [{:keys [host tags]}
    {:keys [match-host match-tag match-default] :as threshold}]
@@ -44,8 +49,8 @@
              (and exact (not= (double metric) (double exact))) "critical"
              (and exact (= (double metric) (double exact)))    "ok"
              (and critical ((if invert <= >) metric critical)) "critical"
-             (and warning ((if invert <= >) metric warning))  "warning"
-             :else                              "ok"))
+             (and warning ((if invert <= >) metric warning))   "warning"
+             :else                                             "ok"))
           event)
         (catch Exception e
           (error e "threshold-check failed for " event))))))
@@ -94,7 +99,7 @@
                              (with-but-icinga {:tags ["summary"]
                                                :ttl default-ttl
                                                :state "ok"}
-                               index)))))
+                             index)))))
            total-network-traffic
            (where (service #"^interface-.*/if_octets/[tr]x$")
                   index
@@ -104,7 +109,7 @@
                                              :tags ["summary"]
                                              :ttl default-ttl
                                              :state "ok"}
-                           index))))
+                         index))))
            distinct-hosts
            (where (not (tagged "summary"))
                   (with :service "distinct hosts"
@@ -122,7 +127,8 @@
                               (with {:service "icinga.riemann.UNIX.memory.quotient"
                                      :ttl default-ttl
                                      :tags ["summary"]}
-                                (float-to-percent index)))))
+                                (float-to-percent index)
+                                (inject-event index)))))
            ;per-host-summaries
            ;(by [:host]
            ;    (project [(service "cpu-average/cpu-system")
@@ -150,7 +156,7 @@
            (where (not (nil? host))
                   (clock-skew
                    (with-but-icinga {:service "clock skew"
-                                       :tags ["internal"]}
+                                     :tags ["internal"]}
                      (rate 5 index))))]
        (where (not (state "expired"))
               memory-and-load-summary
@@ -160,6 +166,5 @@
               clock-skew
               ;alert
               graph
-              (opsgenie "fe5aee2e-a1b4-4114-b957-53e2c672dfac" "langer.markus@gmail.com")
               index))
      (expired #(info "Expired" %)))))

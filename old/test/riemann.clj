@@ -1,3 +1,4 @@
+(logging/init {:file "/var/log/riemann/riemann.log"})
 ; Include the Subfiles
 ; Note: Extract it to riemann-extensions
 (include "misc.clj")
@@ -5,13 +6,13 @@
 (include "threshold.clj")
 
 ; local testing
-(def local-testing true)
+;(def local-testing true)
 
 ; hostname
 (def hostname (.getCanonicalHostName (java.net.InetAddress/getLocalHost)))
 
 ; ### BEGIN RIEMANN CFG ###
-(logging/init :file "/var/log/riemann/riemann.log")
+;(logging/init {:file "/var/log/riemann/riemann.log"})
 
 ; Listen on the local interface over TCP (5555), UDP (5555), and websockets
 ; (5556)
@@ -61,72 +62,72 @@
                   :host hostname
                   :metric (count @hosts)}))))
 
-    (sum-service-metrics-by-host #"cpu-\d+/cpu-idle"
-      (with :service "cpu.idle"
+    (sum-service-metrics-by-host #"riemann.cpu-\d+/cpu-idle"
+      (with :service "riemann.cpu.idle"
         (inject-event index)))
 
-    (sum-service-metrics-by-host #"cpu-\d+/cpu-user"
-      (with :service "cpu.user"
+    (sum-service-metrics-by-host #"riemann.cpu-\d+/cpu-user"
+      (with :service "riemann.cpu.user"
         (inject-event index)))
 
-    (sum-service-metrics-by-host #"cpu-\d+/cpu-system"
-      (with :service "cpu.system"
+    (sum-service-metrics-by-host #"riemann.cpu-\d+/cpu-system"
+      (with :service "riemann.cpu.system"
         (inject-event index)))
 
-    (sum-service-metrics-by-host #"cpu-\d+/cpu-wait"
-      (with :service "cpu.wait"
+    (sum-service-metrics-by-host #"riemann.cpu-\d+/cpu-wait"
+      (with :service "riemann.cpu.wait"
         (inject-event index)))
 
-    (sum-service-metrics-by-host #"cpu-\d+/cpu"
+    (sum-service-metrics-by-host #"riemann.cpu-\d+/cpu"
       (with :service "cpu.total"
         (inject-event index)))
 
     (where
-      (service "cpu.idle")
+      (service "riemann.cpu.idle")
       (fn [event]
         (if-let [metric (:metric event)]
-          (if-let [total (lookup-metric "cpu.total" event)]
+          (if-let [total (lookup-metric "riemann.cpu.total" event)]
             ((split
               (< metric (* total 0.20)) (with :state "warning" (inject-event index))
               (< metric (* total 0.15)) (with :state "critical" (inject-event index))
               (with :state "ok" index)) event)))))
 
     (where
-      (service "cpu.wait")
+      (service "riemann.cpu.wait")
       (fn [event]
         (if-let [metric (:metric event)]
-          (if-let [total (lookup-metric "cpu.total" event)]
+          (if-let [total (lookup-metric "riemann.cpu.total" event)]
             ((split
               (> metric (* total 0.05)) (with :state "warning" (inject-event index))
               (> metric (* total 0.10)) (with :state "critical" (inject-event index))
               (with :state "ok" index)) event)))))
 
-    (where (service #"^df-(?:(?!dev|run).+)$")
+    (where (service #"^riemann.df-(?:(?!dev|run).+)$")
       (by :host
         (fn [event]
-          (if-let [mountpoint (get (re-find #"^df-(\S+)/.*$" (:service event)) 1)]
-            (if-let [item (get (re-find #"^df-(\S+)/.+-(\S+)$" (:service event)) 2)]
+          (if-let [mountpoint (get (re-find #"^riemann.df-(\S+)/.*$" (:service event)) 1)]
+            (if-let [item (get (re-find #"^riemann.df-(\S+)/.+-(\S+)$" (:service event)) 2)]
               ((with :service (str "df." mountpoint "." item) index) event))))))
 
-    (where (service "entropy/entropy")
+    (where (service "riemann.entropy/entropy")
       (by :host
         (fixed-time-window 30
           (combine folds/mean
-            (with :service "entropy.mean" inject-event)))))
+            (with :service "riemann.entropy.mean" inject-event)))))
 
-    (where (service "entropy.mean")
+    (where (service "riemann.entropy.mean")
       (splitp > metric
         20 (with :state "critical" (inject-event index))
         45 (with :state "warning" (inject-event index))
            (with :state "ok" (inject-event index))))
 
-    (where (service "processes/ps_state-zombies")
+    (where (service "riemann.processes/ps_state-zombies")
       (by :host
         (splitp < metric
-          1 (with {:state "critical" :service "processes.zombies"} (inject-event index))
-            (with {:state "ok" :service "processes.zombies"} (inject-event index)))))
+          1 (with {:state "critical" :service "riemann.processes.zombies"} (inject-event index))
+            (with {:state "ok" :service "riemann.processes.zombies"} (inject-event index)))))
 
-    (where (service "processes/fork_rate")
+    (where (service "riemann.processes/fork_rate")
       (by :host
         (fixed-time-window 30
           (smap
@@ -138,10 +139,10 @@
                 (if (not (zero? min-metric))
                   (let [percent (/ max-metric min-metric)]
                     (cond
-                      (> percent 100) ((with {:ttl 40 :state "critical" :service "processes.forkrate.increase" :metric percent} (inject-event index)) last-event)
-                      (> percent 60)  ((with {:ttl 40 :state "warning" :service "processes.forkrate.increase" :metric percent} (inject-event index)) last-event)
-                      :else ((with {:ttl 40 :state "ok" :service "processes.forkrate.increase" :metric percent} (inject-event index)) last-event)))
-                  ((with {:ttl 40 :state "ok" :service "processes.forkrate.increase"} (inject-event index)) last-event)
+                      (> percent 100) ((with {:ttl 40 :state "critical" :service "riemann.processes.forkrate.increase" :metric percent} (inject-event index)) last-event)
+                      (> percent 60)  ((with {:ttl 40 :state "warning" :service "riemann.processes.forkrate.increase" :metric percent} (inject-event index)) last-event)
+                      :else ((with {:ttl 40 :state "ok" :service "riemann.processes.forkrate.increase" :metric percent} (inject-event index)) last-event)))
+                  ((with {:ttl 40 :state "ok" :service "riemann.processes.forkrate.increase"} (inject-event index)) last-event)
                 )))))))
 
     ; Calculate an overall rate of events.
@@ -156,14 +157,14 @@
             (if (contains? @hosts host)
               (swap! hosts update-in [host] inc)
               (swap! hosts conj {host 1}))
-            (index {:service "changed.states"
+            (index {:service "riemann.changed.states"
                     :time (unix-time)
                     :host (:host event)
                     :metric (host @hosts)})))))
 
-    ; by service "ping" take percentiles and set the initial state and ttl
     (where
       (service "ping")
       (percentiles 30 [0.5 0.95 0.99] index)
       (default {:state "ok" :ttl 60} index))
-  ))
+  )
+#(info %))

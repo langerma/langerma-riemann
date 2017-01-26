@@ -56,8 +56,7 @@
                :claim-timeout 0.1
                :reconnect-interval 4 })))
 
-(defn parse-stream
-  [& children]
+(defn parse-stream [& children]
   (fn [e] (let [new-event (assoc e
                                  :host (str (:host e))
                                  :resource (:host e)
@@ -99,9 +98,11 @@
 
 ; thresholding
 (let [index (default :ttl 60 (index))
-      alert (logstash {:host "127.0.0.1"
-                       :port 25827
-                       :protocol :tcp})
+      alert (async-queue! :logstash {:queue-size 1000}
+                          (logstash {:host "127.0.0.1"
+                                     :port 25827
+                                     :protocol :tcp}))
+      op (opsgenie "fe5aee2e-a1b4-4114-b957-53e2c672dfac" "langer.markus@gmail.com")
       dedup-alert (edge-detection 1 log-info alert)
       dedup-2-alert (edge-detection 2 log-info alert)
       dedup-4-alert (edge-detection 4 log-info alert)
@@ -112,22 +113,22 @@
                    (by [:host]
                        (match :service "icinga.riemann.UNIX.load.load1"
                               (splitp < metric
-                                2.0 (minor "System 1-minute load average is very high" dedup-alert)
-                                4.0 (warning "System 1-minute load average is high" dedup-alert)
-                                (normal "System 1-minute load average is OK" dedup-alert))))
+                                5.0 (minor "System 1-minute load average is very high" dedup-alert :trigger op)
+                                4.0 (warning "System 1-minute load average is high" dedup-alert :trigger op)
+                                (normal "System 1-minute load average is OK" dedup-alert :resolve op))))
                    cpu-load-five
                    (by [:host]
                        (match :service "icinga.riemann.UNIX.load.load5"
                               (splitp < metric
-                                1.5 (minor "System 5-minute load average is very high" dedup-alert)
+                                4.0 (minor "System 5-minute load average is very high" dedup-alert)
                                 3.0 (warning "System 5-minute load average is high" dedup-alert)
                                 (normal "System 5-minute load average is OK" dedup-alert))))
                    cpu-load-fivteen
                    (by [:host]
                        (match :service "icinga.riemann.UNIX.load.load15"
                               (splitp < metric
-                                1.2 (minor "System 15-minute load average is very high" dedup-alert)
-                                2.4 (warning "System 15-minute load average is high" dedup-alert)
+                                3.0 (minor "System 15-minute load average is very high" dedup-alert)
+                                2.0 (warning "System 15-minute load average is high" dedup-alert)
                                 (normal "System 15-minute load average is OK" dedup-alert))))]
 
                (where (not (state "expired"))
@@ -135,13 +136,14 @@
                       cpu-load-five
                       cpu-load-fivteen))))
   (streams
-    ;(with {:metric 1 :host hostname :state "normal" :service "riemann events_sec"}
+    (with {:metric 1 :host hostname :state "normal" :service "riemann events_sec"}
       ;#(info %)
       (rate 10 index graph)))
 ; use #(info %) for log
 ;(let [index (index)]
-  ;(streams
-    ;index
+  (streams
+    index
+    graph))
 ;    (where (tags "icinga2")
 ;           (smap (fn [event]
 ;                   (assoc event :state "ok")
